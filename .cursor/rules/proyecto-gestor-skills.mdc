@@ -1,0 +1,39 @@
+---
+description: Contexto del MVP, docs y commits del Gestor de skills de IA
+alwaysApply: true
+---
+
+# Proyecto: Gestor de skills de IA
+
+Proyecto universitario. Al implementar o elegir stack, librerías o estructura, explica en 1-3 frases el porqué (simple, suficiente para el MVP, fácil de defender en clase).
+
+## Alcance del MVP
+
+Solo estas capacidades, salvo que la usuaria pida otra cosa:
+
+- Proyectos
+- Skills con versiones
+- Tablero kanban de tareas
+
+```
+❌ MAL: añadir autenticación, notificaciones o exportación "por si acaso"
+✅ BIEN: implementar CRUD de proyectos / versiones de skill / columnas kanban
+✅ BIEN: si surge algo fuera del MVP, preguntar antes de escribir código
+```
+
+## Git
+
+Commits pequeños (un cambio lógico por commit) y mensajes claros en español.
+
+```
+❌ MAL: git commit -m "updates"  |  un commit gigante con UI + API + docs
+✅ BIEN: feat: crear modelo de skill con historial de versiones
+✅ BIEN: fix: no perder el orden de tarjetas al mover en el kanban
+```
+
+No hagas commit salvo que la usuaria lo pida.
+
+## Documentación
+
+- Toda la documentación del proyecto va en `docs/`.
+- Nunca borres ni vacíes `docs/bitacora.md`. Puedes añadir entradas; no reemplaces el archivo entero si solo hay que agregar una.
