@@ -7,8 +7,8 @@ from sqlalchemy.orm import Session
 
 from database import Base, engine, get_db
 import models
-from models import Project
-from schemas import ProjectCreate, ProjectRead, ProjectUpdate
+from models import Project, Skill, SkillVersion
+from schemas import ProjectCreate, ProjectRead, ProjectUpdate, SkillCreate, SkillRead
 
 
 @asynccontextmanager
@@ -73,3 +73,32 @@ def delete_project(project_id: int, db: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail="Proyecto no encontrado")
     db.delete(project)
     db.commit()
+
+@app.post(
+    "/projects/{project_id}/skills",
+    response_model=SkillRead,
+    status_code=status.HTTP_201_CREATED,
+)
+def create_skill(project_id: int, payload: SkillCreate, db: Session = Depends(get_db)):
+    project = db.get(Project, project_id)
+    if project is None:
+        raise HTTPException(status_code=404, detail="Proyecto no encontrado")
+    skill = Skill(
+        project_id=project_id,
+        name=payload.name,
+        description=payload.description,
+    )
+    skill.versions.append(SkillVersion(number=1, content=payload.content))
+    db.add(skill)
+    db.commit()
+    db.refresh(skill)
+    return skill
+
+@app.get("/projects/{project_id}/skills", response_model=list[SkillRead])
+def list_skills(project_id: int, db: Session = Depends(get_db)):
+    project = db.get(Project, project_id)
+    if project is None:
+        raise HTTPException(status_code=404, detail="Proyecto no encontrado")
+    return db.scalars(
+        select(Skill).where(Skill.project_id == project_id).order_by(Skill.id)
+    ).all()
