@@ -26,3 +26,42 @@
 - PowerShell necesita comillas en `"fastapi[standard]"`
 **Resultado:** API en `:8000`, front de plantilla en `:5173`. SQLAlchemy instalado y sin usar. Sin CORS ni pantallas del gestor.
 **Reflexión:** El extra `[standard]` no es “FastAPI mágico”: incluye el servidor (Uvicorn). Separar backend y frontend obliga a dos procesos; es un costo consciente (D1).
+
+## Entrada 3: Listar y crear proyectos desde el frontend 
+
+**Objetivo:** Que la interfaz React muestre los proyectos guardados en SQLite y permita crear uno nuevo con un formulario, sin pasar por Swagger.
+
+**Herramienta:** Cursor (plan gratuito) generó el código para listar proyectos. Claude lo usamos como tutor para el formulario de creación, porque el uso gratuito de Cursor se agotó.
+
+**Prompt usado:**
+- A Cursor: se le pidió continuar con el paso 14 del plan (listar proyectos en App.tsx).
+- A Claude: "explícalo como me lo estaba explicando Cursor, paso por paso y qué tengo que hacer en cada paso".
+
+**Respuesta de la IA:** Cursor entregó un App.tsx que pide GET /projects al backend y muestra la lista. Claude dividió el formulario en 6 pasos pequeños (import, estados, función handleSubmit, formulario, fetch POST y actualización de la lista) y después entregó el App.tsx completo. Chat completo: [entrada-formulario.md](chats/entrada-formulario.md).
+
+**Qué escribimos nosotros y qué generó la IA:**
+- Generado por Cursor: el código de listar proyectos.
+- Generado por Claude: la estructura del formulario y el App.tsx final.
+- Hecho por nosotros: revisar en /docs de FastAPI cómo espera el backend un proyecto (campos name y description), ejecutar el código y probar todo en el navegador.
+- BORRA UNA DE ESTAS DOS LÍNEAS:
+  - Tecleamos los 6 pasos del formulario a mano, siguiendo la guía.
+  - Pegamos el App.tsx completo que nos dio Claude y después lo leímos parte por parte.
+
+**Qué corregimos o rechazamos y por qué:**
+- Una instrucción de Cursor decía "sustituir todo el archivo" y nos dimos cuenta de que, con el formulario empezado, habríamos borrado trabajo; por eso pedimos que nos explicaran qué hacer exactamente.
+- BORRA UNA DE ESTAS DOS LÍNEAS:
+  - Sin errores en este paso.
+  - Nos apareció un error al crear proyectos (por ejemplo 422) y lo resolvimos revisando que los nombres de los campos coincidieran con los de /docs.
+
+**Qué entendimos:** (redactado con ayuda de Claude y repasado para poder explicarlo)
+- El `[]` al final del `useEffect` hace que la petición al backend se haga una sola vez, al abrir la página. Sin él se repetiría sin parar, porque guardar la lista vuelve a dibujar la pantalla.
+- `e.preventDefault()` evita que el navegador recargue la página al enviar el formulario, para que lo maneje React.
+- Usamos `[...projects, created]` y no `push` porque React necesita recibir una lista nueva para darse cuenta de que algo cambió y actualizar la pantalla.
+- `Content-Type: application/json` le avisa al backend que el cuerpo del envío viene en JSON, para que lo lea correctamente.
+
+**Resultado:** La página lista los proyectos guardados y el formulario crea uno nuevo que aparece al instante y sigue ahí al recargar, porque queda guardado en SQLite.
+
+**Reflexión:**
+- Quedarnos sin uso gratuito en Cursor nos obligó a cambiar de herramienta de IA en mitad del proyecto. Cursor nos daba un paso pequeño a la vez con "qué hacer, qué hace y qué deberías ver", y con Claude tuvimos que pedir explícitamente ese mismo formato.
+- Cuando la IA entrega un archivo completo es fácil pegarlo sin entenderlo; por eso añadimos la sección de comprensión y las preguntas de repaso, que nos obligan a explicar el código con nuestras palabras.
+- La próxima vez guardaremos el chat exportado al terminar cada paso, en lugar de reconstruirlo después.
