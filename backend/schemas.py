@@ -43,3 +43,26 @@ class SkillVersionRead(BaseModel):
 
 class SkillVersionCreate(BaseModel):
     content: str = Field(min_length=1)
+
+class ColumnRead(BaseModel):
+    id: int
+    project_id: int
+    name: str
+    position: int
+
+    model_config = {"from_attributes": True}
+
+class TaskCreate(BaseModel):
+    title: str = Field(min_length=1, max_length=200)
+    skill_version_id: int | None = None
+
+
+class TaskRead(BaseModel):
+    id: int
+    project_id: int
+    column_id: int
+    skill_version_id: int | None
+    title: str
+    position: int
+
+    model_config = {"from_attributes": True}

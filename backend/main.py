@@ -7,8 +7,9 @@ from sqlalchemy.orm import Session
 
 from database import Base, engine, get_db
 import models
-from models import Project, Skill, SkillVersion
+from models import KanbanColumn, Project, Skill, SkillVersion, Task
 from schemas import (
+    ColumnRead,
     ProjectCreate,
     ProjectRead,
     ProjectUpdate,
@@ -16,7 +17,17 @@ from schemas import (
     SkillRead,
     SkillVersionCreate,
     SkillVersionRead,
+    TaskCreate,
+    TaskRead,
 )
+
+DEFAULT_COLUMNS = ["Por hacer", "En progreso", "Hecho"]
+
+
+def create_default_columns(project: Project) -> None:
+    for position, column_name in enumerate(DEFAULT_COLUMNS):
+        project.columns.append(KanbanColumn(name=column_name, position=position))
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -42,6 +53,7 @@ def health():
 @app.post("/projects", response_model=ProjectRead, status_code=status.HTTP_201_CREATED)
 def create_project(payload: ProjectCreate, db: Session = Depends(get_db)):
     project = Project(name=payload.name, description=payload.description)
+    create_default_columns(project)
     db.add(project)
     db.commit()
     db.refresh(project)
@@ -144,3 +156,67 @@ def create_skill_version(
     db.commit()
     db.refresh(version)
     return version
+
+
+@app.get("/projects/{project_id}/columns", response_model=list[ColumnRead])
+def list_columns(project_id: int, db: Session = Depends(get_db)):
+    project = db.get(Project, project_id)
+    if project is None:
+        raise HTTPException(status_code=404, detail="Proyecto no encontrado")
+    if not project.columns:
+        create_default_columns(project)
+        db.commit()
+    return db.scalars(
+        select(KanbanColumn)
+        .where(KanbanColumn.project_id == project_id)
+        .order_by(KanbanColumn.position)
+    ).all()
+
+@app.post(
+    "/projects/{project_id}/tasks",
+    response_model=TaskRead,
+    status_code=status.HTTP_201_CREATED,
+)
+def create_task(project_id: int, payload: TaskCreate, db: Session = Depends(get_db)):
+    project = db.get(Project, project_id)
+    if project is None:
+        raise HTTPException(status_code=404, detail="Proyecto no encontrado")
+    if not project.columns:
+        create_default_columns(project)
+        db.commit()
+    if payload.skill_version_id is not None:
+        version = db.get(SkillVersion, payload.skill_version_id)
+        if version is None or version.skill.project_id != project_id:
+            raise HTTPException(
+                status_code=400, detail="La versión no pertenece a este proyecto"
+            )
+    first_column = db.scalars(
+        select(KanbanColumn)
+        .where(KanbanColumn.project_id == project_id)
+        .order_by(KanbanColumn.position)
+    ).first()
+    last_position = db.scalar(
+        select(func.max(Task.position)).where(Task.column_id == first_column.id)
+    )
+    task = Task(
+        project_id=project_id,
+        column_id=first_column.id,
+        skill_version_id=payload.skill_version_id,
+        title=payload.title,
+        position=0 if last_position is None else last_position + 1,
+    )
+    db.add(task)
+    db.commit()
+    db.refresh(task)
+    return task
+
+@app.get("/projects/{project_id}/tasks", response_model=list[TaskRead])
+def list_tasks(project_id: int, db: Session = Depends(get_db)):
+    project = db.get(Project, project_id)
+    if project is None:
+        raise HTTPException(status_code=404, detail="Proyecto no encontrado")
+    return db.scalars(
+        select(Task)
+        .where(Task.project_id == project_id)
+        .order_by(Task.column_id, Task.position)
+    ).all()

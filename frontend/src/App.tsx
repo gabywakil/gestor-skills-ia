@@ -14,6 +14,13 @@ type Skill = {
   description: string
 }
 
+type SkillVersion = {
+  id: number
+  skill_id: number
+  number: number
+  content: string
+}
+
 const API = 'http://127.0.0.1:8000'
 
 function App() {
@@ -26,6 +33,9 @@ function App() {
   const [skillName, setSkillName] = useState('')
   const [skillDescription, setSkillDescription] = useState('')
   const [skillContent, setSkillContent] = useState('')
+  const [selectedSkill, setSelectedSkill] = useState<Skill | null>(null)
+  const [versions, setVersions] = useState<SkillVersion[]>([])
+  const [versionContent, setVersionContent] = useState('')
 
   useEffect(() => {
     fetch(`${API}/projects`)
@@ -60,6 +70,8 @@ function App() {
   async function selectProject(p: Project) {
     setSelectedProject(p)
     setSkills([])
+    setSelectedSkill(null)
+    setVersions([])
     const res = await fetch(`${API}/projects/${p.id}/skills`)
     if (!res.ok) {
       setError(`HTTP ${res.status}`)
@@ -90,6 +102,35 @@ function App() {
     setSkillName('')
     setSkillDescription('')
     setSkillContent('')
+  }
+
+  async function selectSkill(s: Skill) {
+    setSelectedSkill(s)
+    setVersions([])
+    const res = await fetch(`${API}/skills/${s.id}/versions`)
+    if (!res.ok) {
+      setError(`HTTP ${res.status}`)
+      return
+    }
+    setVersions(await res.json())
+  }
+
+  async function handleCreateVersion(e: FormEvent) {
+    e.preventDefault()
+    if (!selectedSkill) return
+    const res = await fetch(`${API}/skills/${selectedSkill.id}/versions`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ content: versionContent }),
+    })
+    if (!res.ok) {
+      setError(`HTTP ${res.status}`)
+      return
+    }
+    const created: SkillVersion = await res.json()
+    setVersions([...versions, created])
+    setError(null)
+    setVersionContent('')
   }
 
   return (
@@ -147,7 +188,31 @@ function App() {
             {skills.map((s) => (
               <li key={s.id}>
                 <strong>{s.name}</strong>
-                {s.description ? ` — ${s.description}` : ''}
+                {s.description ? ` — ${s.description}` : ''}{' '}
+                <button onClick={() => selectSkill(s)}>Ver versiones</button>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
+      {selectedSkill && (
+        <section>
+          <h3>Versiones de {selectedSkill.name}</h3>
+          <form onSubmit={handleCreateVersion}>
+            <textarea
+              value={versionContent}
+              onChange={(e) => setVersionContent(e.target.value)}
+              placeholder="Contenido de la nueva versión"
+              required
+            />
+            <button type="submit">Crear versión</button>
+          </form>
+          <ul>
+            {versions.map((v, i) => (
+              <li key={v.id}>
+                <strong>v{v.number}</strong>
+                {i === versions.length - 1 ? ' (vigente)' : ''}
+                <div style={{ whiteSpace: 'pre-wrap' }}>{v.content}</div>
               </li>
             ))}
           </ul>
