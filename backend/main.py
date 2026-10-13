@@ -2,7 +2,7 @@ from contextlib import asynccontextmanager
 from fastapi.middleware.cors import CORSMiddleware
 
 from fastapi import Depends, FastAPI, HTTPException, status
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from database import Base, engine, get_db
@@ -14,6 +14,7 @@ from schemas import (
     ProjectUpdate,
     SkillCreate,
     SkillRead,
+    SkillVersionCreate,
     SkillVersionRead,
 )
 
@@ -119,3 +120,27 @@ def list_skill_versions(skill_id: int, db: Session = Depends(get_db)):
         .where(SkillVersion.skill_id == skill_id)
         .order_by(SkillVersion.number)
     ).all()
+
+@app.post(
+    "/skills/{skill_id}/versions",
+    response_model=SkillVersionRead,
+    status_code=status.HTTP_201_CREATED,
+)
+def create_skill_version(
+    skill_id: int, payload: SkillVersionCreate, db: Session = Depends(get_db)
+):
+    skill = db.get(Skill, skill_id)
+    if skill is None:
+        raise HTTPException(status_code=404, detail="Skill no encontrado")
+    last_number = db.scalar(
+        select(func.max(SkillVersion.number)).where(SkillVersion.skill_id == skill_id)
+    )
+    version = SkillVersion(
+        skill_id=skill_id,
+        number=(last_number or 0) + 1,
+        content=payload.content,
+    )
+    db.add(version)
+    db.commit()
+    db.refresh(version)
+    return version

@@ -40,3 +40,6 @@ class SkillVersionRead(BaseModel):
     content: str
 
     model_config = {"from_attributes": True}
+
+class SkillVersionCreate(BaseModel):
+    content: str = Field(min_length=1)
