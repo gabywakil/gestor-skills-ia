@@ -8,8 +8,14 @@ from sqlalchemy.orm import Session
 from database import Base, engine, get_db
 import models
 from models import Project, Skill, SkillVersion
-from schemas import ProjectCreate, ProjectRead, ProjectUpdate, SkillCreate, SkillRead
-
+from schemas import (
+    ProjectCreate,
+    ProjectRead,
+    ProjectUpdate,
+    SkillCreate,
+    SkillRead,
+    SkillVersionRead,
+)
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -101,4 +107,15 @@ def list_skills(project_id: int, db: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail="Proyecto no encontrado")
     return db.scalars(
         select(Skill).where(Skill.project_id == project_id).order_by(Skill.id)
+    ).all()
+
+@app.get("/skills/{skill_id}/versions", response_model=list[SkillVersionRead])
+def list_skill_versions(skill_id: int, db: Session = Depends(get_db)):
+    skill = db.get(Skill, skill_id)
+    if skill is None:
+        raise HTTPException(status_code=404, detail="Skill no encontrado")
+    return db.scalars(
+        select(SkillVersion)
+        .where(SkillVersion.skill_id == skill_id)
+        .order_by(SkillVersion.number)
     ).all()
