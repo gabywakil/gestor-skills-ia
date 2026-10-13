@@ -23,6 +23,9 @@ function App() {
   const [description, setDescription] = useState('')
   const [selectedProject, setSelectedProject] = useState<Project | null>(null)
   const [skills, setSkills] = useState<Skill[]>([])
+  const [skillName, setSkillName] = useState('')
+  const [skillDescription, setSkillDescription] = useState('')
+  const [skillContent, setSkillContent] = useState('')
 
   useEffect(() => {
     fetch(`${API}/projects`)
@@ -65,6 +68,30 @@ function App() {
     setSkills(await res.json())
   }
 
+  async function handleCreateSkill(e: FormEvent) {
+    e.preventDefault()
+    if (!selectedProject) return
+    const res = await fetch(`${API}/projects/${selectedProject.id}/skills`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        name: skillName,
+        description: skillDescription,
+        content: skillContent,
+      }),
+    })
+    if (!res.ok) {
+      setError(`HTTP ${res.status}`)
+      return
+    }
+    const created: Skill = await res.json()
+    setSkills([...skills, created])
+    setError(null)
+    setSkillName('')
+    setSkillDescription('')
+    setSkillContent('')
+  }
+
   return (
     <main style={{ fontFamily: 'sans-serif', padding: '1.5rem' }}>
       <h1>Proyectos</h1>
@@ -96,6 +123,25 @@ function App() {
       {selectedProject && (
         <section>
           <h2>Skills de {selectedProject.name}</h2>
+          <form onSubmit={handleCreateSkill}>
+            <input
+              value={skillName}
+              onChange={(e) => setSkillName(e.target.value)}
+              placeholder="Nombre del skill"
+              required
+            />
+            <input
+              value={skillDescription}
+              onChange={(e) => setSkillDescription(e.target.value)}
+              placeholder="Descripción"
+            />
+            <textarea
+              value={skillContent}
+              onChange={(e) => setSkillContent(e.target.value)}
+              placeholder="Contenido (será la versión 1)"
+            />
+            <button type="submit">Crear skill</button>
+          </form>
           {skills.length === 0 && <p>Este proyecto no tiene skills todavía.</p>}
           <ul>
             {skills.map((s) => (
