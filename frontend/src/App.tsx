@@ -7,6 +7,13 @@ type Project = {
   description: string
 }
 
+type Skill = {
+  id: number
+  project_id: number
+  name: string
+  description: string
+}
+
 const API = 'http://127.0.0.1:8000'
 
 function App() {
@@ -14,6 +21,8 @@ function App() {
   const [error, setError] = useState<string | null>(null)
   const [name, setName] = useState('')
   const [description, setDescription] = useState('')
+  const [selectedProject, setSelectedProject] = useState<Project | null>(null)
+  const [skills, setSkills] = useState<Skill[]>([])
 
   useEffect(() => {
     fetch(`${API}/projects`)
@@ -45,6 +54,17 @@ function App() {
     setDescription('')
   }
 
+  async function selectProject(p: Project) {
+    setSelectedProject(p)
+    setSkills([])
+    const res = await fetch(`${API}/projects/${p.id}/skills`)
+    if (!res.ok) {
+      setError(`HTTP ${res.status}`)
+      return
+    }
+    setSkills(await res.json())
+  }
+
   return (
     <main style={{ fontFamily: 'sans-serif', padding: '1.5rem' }}>
       <h1>Proyectos</h1>
@@ -68,10 +88,25 @@ function App() {
         {projects.map((p) => (
           <li key={p.id}>
             <strong>{p.name}</strong>
-            {p.description ? ` — ${p.description}` : ''}
+            {p.description ? ` — ${p.description}` : ''}{' '}
+            <button onClick={() => selectProject(p)}>Ver skills</button>
           </li>
         ))}
       </ul>
+      {selectedProject && (
+        <section>
+          <h2>Skills de {selectedProject.name}</h2>
+          {skills.length === 0 && <p>Este proyecto no tiene skills todavía.</p>}
+          <ul>
+            {skills.map((s) => (
+              <li key={s.id}>
+                <strong>{s.name}</strong>
+                {s.description ? ` — ${s.description}` : ''}
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
     </main>
   )
 }

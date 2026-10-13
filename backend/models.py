@@ -7,7 +7,11 @@ from database import Base
 class Project(Base):
     __tablename__ = "projects"
 
-        skills: Mapped[list["Skill"]] = relationship(
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    name: Mapped[str] = mapped_column(String(200))
+    description: Mapped[str] = mapped_column(Text, default="")
+
+    skills: Mapped[list["Skill"]] = relationship(
         back_populates="project", cascade="all, delete-orphan"
     )
     columns: Mapped[list["KanbanColumn"]] = relationship(
@@ -27,7 +31,7 @@ class Skill(Base):
     description: Mapped[str] = mapped_column(Text, default="")
 
     project: Mapped["Project"] = relationship(back_populates="skills")
-        versions: Mapped[list["SkillVersion"]] = relationship(
+    versions: Mapped[list["SkillVersion"]] = relationship(
         back_populates="skill", cascade="all, delete-orphan"
     )
 
@@ -54,7 +58,7 @@ class KanbanColumn(Base):
     position: Mapped[int] = mapped_column(Integer, default=0)
 
     project: Mapped["Project"] = relationship(back_populates="columns")
-        tasks: Mapped[list["Task"]] = relationship(
+    tasks: Mapped[list["Task"]] = relationship(
         back_populates="column", cascade="all, delete-orphan"
     )
 
