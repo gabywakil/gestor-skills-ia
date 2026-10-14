@@ -5,10 +5,9 @@
 - **Cursor (plan gratuito):** herramienta principal elegida. Se usó para la planificación inicial, el esqueleto del proyecto y los primeros pasos del backend y del frontend.
 - **Claude:** herramienta de apoyo desde el inicio, para revisar los pasos que proponía Cursor, explicar conceptos y preparar la documentación. Desde que se agotó el uso gratuito de Cursor, pasó a ser la guía principal del desarrollo; Cursor se siguió usando como editor de código.
 - **Por qué dos herramientas:** el plan gratuito de Cursor tiene un límite de uso mensual que se agotó a mitad del proyecto. Con ambas mantuvimos las mismas reglas: pasos pequeños, sin vibe coding y revisando cada cambio antes de aceptarlo.
-- **Integrantes y aportes:** [completar con el nombre de cada integrante y lo que hizo]
 - **Conversaciones guardadas:** Cursor en `docs/chats/cursor_project_setup_guidance.md` y en las capturas de `docs/capturas/`; Claude en `docs/chats/claude.md`.
 
-## Entrada 1: Planificación inicial del MVP (12/10/2026)
+## Entrada 1: Planificación inicial del MVP 
 
 **Objetivo:** Definir el stack, el modelo de datos y el plan de construcción antes de escribir código.
 
@@ -34,7 +33,7 @@
 
 **Reflexión:** La IA propuso un diseño sólido, pero incluyó datos redundantes y recomendó un stack que no era el que queríamos. Revisarlo antes de construir evitó heredar esos problemas.
 
-## Entrada 2: Esqueleto del proyecto (12/10/2026)
+## Entrada 2: Esqueleto del proyecto 
 
 **Objetivo:** Dejar el backend (FastAPI) y el frontend (React con Vite) arrancando, sin funciones propias.
 
@@ -61,7 +60,7 @@
 
 **Reflexión:** Darle a la IA los detalles de nuestro entorno evita comandos que no funcionan. Pedirle que actúe como tutor nos obligó a ejecutar y entender cada paso.
 
-## Entrada 3: Modelos, API de proyectos y primera pantalla (12/10/2026)
+## Entrada 3: Modelos, API de proyectos y primera pantalla 
 
 **Objetivo:** Crear la base de datos y la API de proyectos, y mostrarlos en una página de React.
 
@@ -82,7 +81,7 @@
 
 **Reflexión:** Probar primero cada endpoint en /docs nos permitió saber que el backend funcionaba antes de tocar React.
 
-## Entrada 4: Formulario de proyectos, skills y versiones en el backend (12/10/2026)
+## Entrada 4: Formulario de proyectos, skills y versiones en el backend 
 
 **Objetivo:** Crear proyectos desde la página y construir en el backend la parte central del producto: skills que nacen con su versión 1, y nuevas versiones sin editar las anteriores.
 
@@ -110,7 +109,7 @@
 
 **Reflexión:** Que Claude leyera nuestro código antes de proponer los pasos evitó nombres inventados. Con guías de pasos pequeños es fácil pegar sin entender; por eso respondimos preguntas de comprensión después de cada paso.
 
-## Entrada 5: Borrado en cascada, errores del backend y skills en React (13/10/2026)
+## Entrada 5: Borrado en cascada, errores del backend y skills en React 
 
 **Objetivo:** Arreglar el borrado de proyectos con contenido, resolver los errores que aparecieron y mostrar skills y versiones en la página.
 
@@ -136,17 +135,15 @@
 
 **Reflexión:** Los errores de este paso vinieron de aplicar cambios a mano, no de la lógica. Aprendimos a comprobar con py_compile antes de arrancar y a diagnosticar dónde está el problema.
 
-## Entrada 6: Tablero, interfaz final y manejo de errores (13/10/2026)
+## Entrada 6: Tablero, interfaz final y manejo de errores
 
 **Objetivo:** Terminar el aplicativo: tablero de tareas, interfaz con estilos y avisos de error cuando el backend falla.
 
 **Herramienta:** Claude, porque el uso gratuito de Cursor seguía agotado.
 
-**Prompt usado:** "Dame en el chat todo lo que falta del código", con la entrega al día siguiente.
-
 **Respuesta de la IA:** Claude entregó archivos completos, para evitar los errores de sangría anteriores. En el backend: columnas por defecto del tablero, crear y listar tareas, mover una tarea de columna, eliminarla y listar las versiones de skill de un proyecto. En el frontend: barra lateral de proyectos, pestañas Skills y Tablero, botones para mover tareas, botón para restaurar una versión en el formulario, manejo de errores y estilos propios en lugar de los de la plantilla.
 
-**Qué escribimos nosotros y qué generó la IA:** Claude generó los archivos de este paso por la fecha de entrega. Nosotros los aplicamos, probamos cada función en el navegador y en /docs, comprobamos el caso del backend apagado y preparamos los datos de ejemplo.
+**Qué escribimos nosotros y qué generó la IA:** Claude generó los archivos de este paso. Nosotros los aplicamos, probamos cada función en el navegador y en /docs, comprobamos el caso del backend apagado y preparamos los datos de ejemplo.
 
 **Qué corregimos o rechazamos y por qué:**
 - Reemplazamos los estilos de la plantilla de Vite, que centraban toda la página.
@@ -160,7 +157,6 @@
 
 **Resultado:** Aplicativo completo: proyectos, skills con historial de versiones, tablero con tres columnas, interfaz con estilos y avisos de error.
 
-**Reflexión:**
-- Con la fecha de entrega encima pedimos archivos completos, lo que acelera pero aumenta el riesgo de pegar sin entender. Lo compensamos con preguntas de comprensión por pieza.
+**Reflexiones:**
 - Quedarnos sin uso gratuito en Cursor nos obligó a seguir con otra IA como tutor; cuando la IA entrega archivos completos es fácil dejar de pensar, por eso fue importante probar y explicar cada parte.
 - Para la próxima, dejaríamos más margen para escribir nosotros las piezas centrales y que la IA las revise.
