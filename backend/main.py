@@ -1,12 +1,12 @@
 from contextlib import asynccontextmanager
-from fastapi.middleware.cors import CORSMiddleware
 
 from fastapi import Depends, FastAPI, HTTPException, status
+from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from database import Base, engine, get_db
-import models
+import models  # noqa: F401  (registra los modelos para create_all)
 from models import KanbanColumn, Project, Skill, SkillVersion, Task
 from schemas import (
     ColumnRead,
@@ -18,7 +18,9 @@ from schemas import (
     SkillVersionCreate,
     SkillVersionRead,
     TaskCreate,
+    TaskMove,
     TaskRead,
+    VersionOptionRead,
 )
 
 DEFAULT_COLUMNS = ["Por hacer", "En progreso", "Hecho"]
@@ -39,7 +41,7 @@ app = FastAPI(lifespan=lifespan)
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173"],
+    allow_origins=["http://localhost:5173", "http://127.0.0.1:5173"],
     allow_methods=["*"],
     allow_headers=["*"],
 )
@@ -48,6 +50,9 @@ app.add_middleware(
 @app.get("/health")
 def health():
     return {"status": "ok"}
+
+
+# ---------- Proyectos ----------
 
 
 @app.post("/projects", response_model=ProjectRead, status_code=status.HTTP_201_CREATED)
@@ -93,6 +98,10 @@ def delete_project(project_id: int, db: Session = Depends(get_db)):
     db.delete(project)
     db.commit()
 
+
+# ---------- Skills y versiones ----------
+
+
 @app.post(
     "/projects/{project_id}/skills",
     response_model=SkillRead,
@@ -113,6 +122,7 @@ def create_skill(project_id: int, payload: SkillCreate, db: Session = Depends(ge
     db.refresh(skill)
     return skill
 
+
 @app.get("/projects/{project_id}/skills", response_model=list[SkillRead])
 def list_skills(project_id: int, db: Session = Depends(get_db)):
     project = db.get(Project, project_id)
@@ -121,6 +131,7 @@ def list_skills(project_id: int, db: Session = Depends(get_db)):
     return db.scalars(
         select(Skill).where(Skill.project_id == project_id).order_by(Skill.id)
     ).all()
+
 
 @app.get("/skills/{skill_id}/versions", response_model=list[SkillVersionRead])
 def list_skill_versions(skill_id: int, db: Session = Depends(get_db)):
@@ -132,6 +143,7 @@ def list_skill_versions(skill_id: int, db: Session = Depends(get_db)):
         .where(SkillVersion.skill_id == skill_id)
         .order_by(SkillVersion.number)
     ).all()
+
 
 @app.post(
     "/skills/{skill_id}/versions",
@@ -158,6 +170,31 @@ def create_skill_version(
     return version
 
 
+@app.get("/projects/{project_id}/versions", response_model=list[VersionOptionRead])
+def list_project_versions(project_id: int, db: Session = Depends(get_db)):
+    project = db.get(Project, project_id)
+    if project is None:
+        raise HTTPException(status_code=404, detail="Proyecto no encontrado")
+    rows = db.execute(
+        select(SkillVersion, Skill.name)
+        .join(Skill, SkillVersion.skill_id == Skill.id)
+        .where(Skill.project_id == project_id)
+        .order_by(Skill.id, SkillVersion.number)
+    ).all()
+    return [
+        VersionOptionRead(
+            id=version.id,
+            skill_id=version.skill_id,
+            skill_name=skill_name,
+            number=version.number,
+        )
+        for version, skill_name in rows
+    ]
+
+
+# ---------- Tablero ----------
+
+
 @app.get("/projects/{project_id}/columns", response_model=list[ColumnRead])
 def list_columns(project_id: int, db: Session = Depends(get_db)):
     project = db.get(Project, project_id)
@@ -171,6 +208,7 @@ def list_columns(project_id: int, db: Session = Depends(get_db)):
         .where(KanbanColumn.project_id == project_id)
         .order_by(KanbanColumn.position)
     ).all()
+
 
 @app.post(
     "/projects/{project_id}/tasks",
@@ -210,6 +248,7 @@ def create_task(project_id: int, payload: TaskCreate, db: Session = Depends(get_
     db.refresh(task)
     return task
 
+
 @app.get("/projects/{project_id}/tasks", response_model=list[TaskRead])
 def list_tasks(project_id: int, db: Session = Depends(get_db)):
     project = db.get(Project, project_id)
@@ -220,3 +259,33 @@ def list_tasks(project_id: int, db: Session = Depends(get_db)):
         .where(Task.project_id == project_id)
         .order_by(Task.column_id, Task.position)
     ).all()
+
+
+@app.patch("/tasks/{task_id}/move", response_model=TaskRead)
+def move_task(task_id: int, payload: TaskMove, db: Session = Depends(get_db)):
+    task = db.get(Task, task_id)
+    if task is None:
+        raise HTTPException(status_code=404, detail="Tarea no encontrada")
+    column = db.get(KanbanColumn, payload.column_id)
+    if column is None or column.project_id != task.project_id:
+        raise HTTPException(
+            status_code=400, detail="La columna no pertenece a este proyecto"
+        )
+    if column.id != task.column_id:
+        last_position = db.scalar(
+            select(func.max(Task.position)).where(Task.column_id == column.id)
+        )
+        task.column_id = column.id
+        task.position = 0 if last_position is None else last_position + 1
+        db.commit()
+        db.refresh(task)
+    return task
+
+
+@app.delete("/tasks/{task_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_task(task_id: int, db: Session = Depends(get_db)):
+    task = db.get(Task, task_id)
+    if task is None:
+        raise HTTPException(status_code=404, detail="Tarea no encontrada")
+    db.delete(task)
+    db.commit()

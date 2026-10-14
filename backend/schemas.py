@@ -18,6 +18,7 @@ class ProjectRead(BaseModel):
 
     model_config = {"from_attributes": True}
 
+
 class SkillCreate(BaseModel):
     name: str = Field(min_length=1, max_length=200)
     description: str = ""
@@ -33,6 +34,10 @@ class SkillRead(BaseModel):
     model_config = {"from_attributes": True}
 
 
+class SkillVersionCreate(BaseModel):
+    content: str = Field(min_length=1)
+
+
 class SkillVersionRead(BaseModel):
     id: int
     skill_id: int
@@ -41,8 +46,13 @@ class SkillVersionRead(BaseModel):
 
     model_config = {"from_attributes": True}
 
-class SkillVersionCreate(BaseModel):
-    content: str = Field(min_length=1)
+
+class VersionOptionRead(BaseModel):
+    id: int
+    skill_id: int
+    skill_name: str
+    number: int
+
 
 class ColumnRead(BaseModel):
     id: int
@@ -52,9 +62,14 @@ class ColumnRead(BaseModel):
 
     model_config = {"from_attributes": True}
 
+
 class TaskCreate(BaseModel):
     title: str = Field(min_length=1, max_length=200)
     skill_version_id: int | None = None
+
+
+class TaskMove(BaseModel):
+    column_id: int
 
 
 class TaskRead(BaseModel):
